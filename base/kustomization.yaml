@@ -1,0 +1,15 @@
+resources:
+  - namespace.yaml
+  - store-gateway.yaml
+  - compactor.yaml
+  - querier.yaml
+  - ruler.yaml
+  - alertmanager.yaml
+  - receiver/receiver-kazusa.yaml
+  - receiver/receiver-setsuna.yaml
+  - receiver/receiver-default.yaml
+  - receiver/receiver-controller.yaml
+  - receiver/receiver-hashring-config.yaml
+  - ingress.yaml
+
+namespace: thanos

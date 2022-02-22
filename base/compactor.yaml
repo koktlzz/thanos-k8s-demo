@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-compactor
+  labels:
+    app: thanos-compactor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-compactor
+  template:
+    metadata:
+      labels:
+        app: thanos-compactor
+    spec:
+      containers:
+      - name: compactor
+        image: thanos:v0.24.0
+        args:
+        - compact
+        - --log.level=info
+        - --data-dir=/data
+        - --objstore.config-file=/etc/prometheus/obs-config/bucket.yaml
+        - --http-address=0.0.0.0:10902
+        - --consistency-delay=30m
+        - --wait
+        volumeMounts:
+        - name: s3-store-credentials
+          mountPath: /etc/prometheus/obs-config
+          readOnly: true
+      volumes:
+      - name: s3-store-credentials
+        secret:
+          secretName: store-s3-credentials

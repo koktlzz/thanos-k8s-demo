@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-receiver-kazusa
+  labels:
+    app: thanos-receiver
+    tenant: kazusa
+    controller.receive.thanos.io: thanos-receive-controller
+    controller.receive.thanos.io/hashring: hashring-kazusa
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: thanos-receiver
+      tenant: kazusa
+      controller.receive.thanos.io: thanos-receive-controller
+      controller.receive.thanos.io/hashring: hashring-kazusa
+  serviceName: thanos-receiver-kazusa
+  template:
+    metadata:
+      labels:
+        app: thanos-receiver
+        tenant: kazusa
+        controller.receive.thanos.io: thanos-receive-controller
+        controller.receive.thanos.io/hashring: hashring-kazusa
+    spec:
+      containers:
+      - name: receiver
+        image: thanos:v0.24.0
+        args:
+        - receive
+        - --label=receiver_replica="$(NAME)"
+        - --receive.local-endpoint=$(NAME).thanos-receiver-kazusa.thanos.svc.cluster.local:10901
+        - --receive.default-tenant-id=kazusa
+        - --receive.replication-factor=2
+        - --tsdb.path=/data/remote-write-receive-data
+        - --tsdb.retention=12h
+        - --log.level=info
+        - --grpc-address=0.0.0.0:10901
+        - --http-address=0.0.0.0:10902
+        - --remote-write.address=0.0.0.0:19291
+        - --objstore.config-file=/etc/prometheus/obs-config/bucket.yaml
+        - --receive.hashrings-file=/etc/prometheus/hashring-config/hashrings.json
+        env:
+        - name: NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        ports:
+        - containerPort: 10901
+          name: grpc
+        - containerPort: 10902
+          name: http
+        - containerPort: 19291
+          name: remote-write
+        volumeMounts:
+        - name: s3-store-credentials
+          mountPath: /etc/prometheus/obs-config
+          readOnly: true
+        - name: remote-write-data
+          mountPath: /data/remote-write-receive-data
+        - mountPath: /etc/prometheus/hashring-config
+          name: hashring-config
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /-/healthy
+            port: 10902
+            scheme: HTTP
+          periodSeconds: 30
+        readinessProbe:
+          failureThreshold: 20
+          httpGet:
+            path: /-/ready
+            port: 10902
+            scheme: HTTP
+          periodSeconds: 5
+      volumes:
+      - name: s3-store-credentials
+        secret:
+          secretName: store-s3-credentials
+      - name: remote-write-data
+        emptyDir: {}
+      - configMap:
+          name: thanos-receiver-hashring-generated-config
+        name: hashring-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: thanos-receiver
+    tenant: kazusa
+    controller.receive.thanos.io/hashring: hashring-kazusa
+  name: thanos-receiver-kazusa
+spec:
+  clusterIP: None
+  ports:
+  - port: 10902
+    protocol: TCP
+    targetPort: http
+    name: http
+  - port: 10901
+    protocol: TCP
+    targetPort: grpc
+    name: grpc
+  - port: 19291
+    protocol: TCP
+    targetPort: remote-write
+    name: remote-write
+  selector:
+    app: thanos-receiver
+    tenant: kazusa
+    controller.receive.thanos.io: thanos-receive-controller
+    controller.receive.thanos.io/hashring: hashring-kazusa

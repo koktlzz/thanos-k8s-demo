@@ -1,0 +1,7 @@
+type: ALIYUNOSS
+config:
+  bucket: "thanos"
+  insecure: true
+  endpoint: ""
+  access_key_id: ""
+  access_key_secret: ""

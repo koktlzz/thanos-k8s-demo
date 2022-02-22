@@ -1,0 +1,34 @@
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: "https://todokanaitl.github.io/"
+  smtp_from: "prometheus@whitealbum.com"
+  smtp_require_tls: false
+route:
+  group_wait: 30s
+  group_interval: 10m
+  repeat_interval: 12h
+  group_by: [alertname]
+  receiver: default
+  routes:
+    - receiver: kazusa
+      group_wait: 30s
+      matchers:
+        - tenant_id="kazusa"
+    - receiver: setsuna
+      group_wait: 30s
+      matchers:
+        - tenant_id="setsuna"
+
+receivers:
+  - name: default
+    email_configs:
+      - to: "haruki@whitealbum.com"
+        send_resolved: true
+  - name: kazusa
+    email_configs:
+      - to: "kazusa@whitealbum.com"
+        send_resolved: true
+  - name: setsuna
+    email_configs:
+      - to: "setsuna@whitealbum.com"
+        send_resolved: true

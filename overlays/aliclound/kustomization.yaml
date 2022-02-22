@@ -1,0 +1,41 @@
+resources:
+  - ../../base
+
+namespace: thanos
+
+images:
+  - name: thanos
+    newName: quay.io/thanos/thanos
+  - name: alertmanager
+    newName: prom/alertmanager
+  - name: thanos-receive-controller
+    newName: quay.io/observatorium/thanos-receive-controller
+
+patches:
+  - target:
+      kind: Deployment
+      name: thanos-ruler
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args/3
+        value: --alert.query-url=http://thanos-querier.uuid.cn-shanghai.alicontainer.com 
+  - target:
+      kind: Deployment
+      name: alertmanager
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args/1
+        value: --web.external-url=http://alertmanager.uuid.cn-shanghai.alicontainer.com 
+
+configMapGenerator:
+  - files:
+    - alert-config.yaml
+    name: alert-config
+  - files:
+    - watchdog.rules.yaml
+    name: rules
+
+secretGenerator:
+  - files:
+    - bucket.yaml
+    name: store-s3-credentials

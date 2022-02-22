@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-ruler
+  labels:
+    app: thanos-ruler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-ruler
+  template:
+    metadata:
+      labels:
+        app: thanos-ruler
+    spec:
+      containers:
+      - name: ruler
+        image: thanos:v0.24.0
+        args:
+        - rule
+        - --grpc-address=0.0.0.0:10901
+        - --http-address=0.0.0.0:10902
+        - --alert.query-url=http://thanos-querier
+        - --log.level=info
+        - --data-dir=/data
+        - --eval-interval=15s
+        - --query=dnssrv+thanos-querier.thanos.svc.cluster.local
+        - --alertmanagers.url=dnssrv+http://alertmanager.thanos.svc.cluster.local
+        - --rule-file=/etc/prometheus/rules/*.rules.yaml
+        - --objstore.config-file=/etc/prometheus/obs-config/bucket.yaml
+        ports:
+        - name: http
+          containerPort: 10902
+        - name: grpc
+          containerPort: 10901
+        volumeMounts:
+        - mountPath: /etc/prometheus/rules/
+          name: rules
+        - mountPath: /etc/prometheus/obs-config
+          name: s3-store-credentials
+          readOnly: true
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: rules
+          name: rules
+        - secret:
+            secretName: store-s3-credentials
+          name: s3-store-credentials
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: thanos-ruler
+  name: thanos-ruler
+spec:
+  ports:
+  - port: 10901
+    protocol: TCP
+    targetPort: grpc
+    name: grpc
+  - port: 10902
+    protocol: TCP
+    targetPort: http
+    name: http
+  selector:
+    app: thanos-ruler
+  type: ClusterIP

@@ -1,0 +1,63 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: alertmanager
+  name: alertmanager
+spec:
+  rules:
+    - host: alertmanager.uuid.cn-shanghai.alicontainer.com
+      http:
+        paths:
+          - backend:
+              serviceName: alertmanager
+              servicePort: http
+            path: /
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: thanos-querier
+  name: thanos-querier
+spec:
+  rules:
+    - host: thanos-querier.uuid.cn-shanghai.alicontainer.com
+      http:
+        paths:
+          - backend:
+              serviceName: thanos-querier
+              servicePort: http
+            path: /
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: thanos-ruler
+  name: thanos-ruler
+spec:
+  rules:
+    - host: thanos-ruler.uuid.cn-shanghai.alicontainer.com
+      http:
+        paths:
+          - backend:
+              serviceName: thanos-ruler
+              servicePort: http
+            path: /
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: thanos-receiver
+  name: thanos-receiver
+spec:
+  rules:
+    - host: thanos-receiver.uuid.cn-shanghai.alicontainer.com
+      http:
+        paths:
+          - backend:
+              serviceName: thanos-receiver
+              servicePort: remote-write
+            path: /

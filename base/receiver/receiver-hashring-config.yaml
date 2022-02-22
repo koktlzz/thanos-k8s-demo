@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thanos-receiver-hashring-config
+  labels:
+    app: thanos-receiver-controller
+data:
+  hashrings.json: |
+    [
+        {
+            "hashring": "hashring-setsuna",
+            "tenants": ["setsuna"]
+        },
+        {
+            "hashring": "hashring-kazusa",
+            "tenants": ["kazusa"]
+        },
+        {
+            "hashring": "default"
+        }
+    ]

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-querier
+  labels:
+    app: thanos-querier
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-querier
+  template:
+    metadata:
+      labels:
+        app: thanos-querier
+    spec:
+      containers:
+      - name: querier
+        image: thanos:v0.24.0
+        args:
+        - query
+        - --log.level=info
+        - --query.replica-label=prometheus_replica
+        - --query.replica-label=receiver_replica
+        # Discover local store APIs using DNS SRV.
+        - --store=dnssrv+thanos-store-gateway.thanos.svc.cluster.local
+        - --store=dnssrv+_grpc._tcp.thanos-receiver-default.thanos.svc.cluster.local
+        - --store=dnssrv+_grpc._tcp.thanos-receiver-kazusa.thanos.svc.cluster.local
+        - --store=dnssrv+_grpc._tcp.thanos-receiver-setsuna.thanos.svc.cluster.local
+        - --store=dnssrv+_grpc._tcp.thanos-ruler.thanos.svc.cluster.local
+        ports:
+        - name: http
+          containerPort: 10902
+        - name: grpc
+          containerPort: 10901
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: thanos-querier
+  name: thanos-querier
+spec:
+  ports:
+  - port: 9090
+    protocol: TCP
+    targetPort: http
+    name: http
+  selector:
+    app: thanos-querier
+  type: ClusterIP
